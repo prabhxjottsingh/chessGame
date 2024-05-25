@@ -3,7 +3,7 @@ import { GameInfo } from './GameInfo';
 
 export class GameManagerClass {
     gamesInfo: GameInfo[];
-    pendingPlayer!: WebSocket;
+    pendingPlayer!: WebSocket | null;
     constructor() {
         this.gamesInfo = [];
     }

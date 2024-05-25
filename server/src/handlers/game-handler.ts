@@ -3,28 +3,33 @@ import { AddUserToGameRequest } from "../modals/requests/add-user-to-game-reques
 import { RemoveUserFromGameRequest } from "../modals/requests/remove-user-from-game-request";
 import { GameManagerClass } from "../modals/GameManagerClass";
 import { GameInfo } from "../modals/GameInfo";
-import { WebSocketHandler } from "./web-socket-handler";
 import { HanldePlayerMoveRequest } from "../modals/requests/handle-player-move-request";
 import { Chess } from "chess.js";
+import { EVENT_TYPE } from "../Utils/constants";
+import { WebSocketHandler } from "./web-socket-handler";
+
+
 
 export class GameHandler {
+    static currentGameId: number = 1;
     private gamesData: GameManagerClass = new GameManagerClass();
-    private webSocketHandler: WebSocketHandler = new WebSocketHandler();
-    private chess = new Chess();
-    static currentGameId: number = 0;
     constructor() { }
 
     async addUserToGame(req: AddUserToGameRequest) {
         const pendingPlayer = this.gamesData.pendingPlayer;
         if (pendingPlayer) {
-            this.gamesData.gamesInfo.push(new GameInfo({
+            console.log('Game is created', GameHandler.currentGameId++);
+            const gameInfo: GameInfo = new GameInfo({
                 id: GameHandler.currentGameId++,
                 player1: pendingPlayer,
                 player2: req.player
-            }));
-            this.gamesData.pendingPlayer = {} as WebSocket;
-            // start the game
-            // add webSockets and generate a connection, send the game info to both players
+            });
+            this.gamesData.gamesInfo.push(gameInfo);
+            this.sendMessageToWebSocket(gameInfo, JSON.stringify({
+                player1Color: 'white',
+                player2Color: 'black'
+            }), EVENT_TYPE.INIT_GAME);
+            this.gamesData.pendingPlayer = null;
         } else {
             this.gamesData.pendingPlayer = req.player;
         }
@@ -36,18 +41,52 @@ export class GameHandler {
 
     async handlePlayerMove(req: HanldePlayerMoveRequest) {
         const playerSocket = req.player;
-        const gameIndex = this.gamesData.gamesInfo.findIndex((gameData) => {
+        const currGameInfoIdx = this.gamesData.gamesInfo.findIndex((gameData) => {
             return gameData.player1 === playerSocket || gameData.player2 === playerSocket;
+        })
+        const gameInfo: GameInfo = this.gamesData.gamesInfo[currGameInfoIdx];
+
+        gameInfo.board.move({
+            from: req.from,
+            to: req.to
         });
-        if (gameIndex === -1) {
-            throw new Error('Player not found in any game');
-        } else {
-            this.gamesData.gamesInfo[gameIndex].board.move({
-                from: req.moveFrom,
-                to: req.moveTo
-            });
-            // send the updated boardState through socket to both of the players
+
+
+        // updateTheBoardState
+        this.gamesData.gamesInfo[currGameInfoIdx] = gameInfo;
+
+        // sendMessageToWebSocket Updating the State
+        this.sendMessageToWebSocket(gameInfo, JSON.stringify({
+            board: gameInfo.board.fen()
+        }), EVENT_TYPE.UPDATE_BOARD);
+
+        // gameOver, Draw
+        if (gameInfo.board.isGameOver()) {
+            // send the game over message to both of the players
+            this.sendMessageToWebSocket(gameInfo, JSON.stringify({
+                gameState: 'draw'
+            }), EVENT_TYPE.GAME_OVER);
         }
+
+        //gameCheckmate
+        if (gameInfo.board.isCheckmate()) {
+            // send the checkmate message to the player
+            this.sendMessageToWebSocket(gameInfo, JSON.stringify({
+                winner: gameInfo.board.turn() === 'w' ? 'black' : 'whit'
+            }), EVENT_TYPE.CHECKMATE);
+        }
+    }
+
+    async sendMessageToWebSocket(gameInfo: GameInfo, message: string, eventType: EVENT_TYPE) {
+        console.log('Sending message to both of the players', JSON.stringify(gameInfo));
+        gameInfo.player1.send(JSON.stringify({
+            eventName: eventType,
+            payload: message
+        }));
+        gameInfo.player2.send(JSON.stringify({
+            eventName: eventType,
+            payload: message
+        }));
     }
 
 };

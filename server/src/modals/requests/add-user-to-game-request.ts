@@ -5,7 +5,7 @@ export class AddUserToGameRequest {
     player: WebSocket;
     constructor(reqObj: AddUserToGameRequest) {
         if (!reqObj || !reqObj.player) {
-            throw new BadRequestError('Invalid Game object');
+            throw new BadRequestError(`Invalid Reuqest to Start the Game ${reqObj}`);
         }
         this.player = reqObj.player;
     }

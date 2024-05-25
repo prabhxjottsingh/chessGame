@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
 import { BadRequestError } from './errors/bad-request-error';
 import { Chess } from 'chess.js';
-
 export class GameInfo {
     id: number;
     player1: WebSocket;
@@ -12,7 +11,7 @@ export class GameInfo {
 
     constructor(reqObj: Partial<GameInfo>) {
         if (!reqObj || !reqObj.id || !reqObj.player1 || !reqObj.player2) {
-            throw new BadRequestError('Invalid Game object');
+            throw new BadRequestError('Invalid Game info');
         }
         this.id = reqObj.id;
         this.player1 = reqObj.player1;

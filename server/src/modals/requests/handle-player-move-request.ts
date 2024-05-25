@@ -3,14 +3,15 @@ import { BadRequestError } from '../errors/bad-request-error';
 
 export class HanldePlayerMoveRequest {
     player: WebSocket;
-    moveFrom: string;
-    moveTo: string;
+    from: string;
+    to: string;
     constructor(reqObj: HanldePlayerMoveRequest) {
-        if (!reqObj || !reqObj.player || !reqObj.moveFrom || !reqObj.moveTo) {
+        console.log(reqObj);
+        if (!reqObj || !reqObj.player || !reqObj.from || !reqObj.to) {
             throw new BadRequestError('Invalid Game object');
         }
         this.player = reqObj.player;
-        this.moveFrom = reqObj.moveFrom;
-        this.moveTo = reqObj.moveTo;
+        this.from = reqObj.from;
+        this.to = reqObj.to;
     }
 };

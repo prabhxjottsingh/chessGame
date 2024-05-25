@@ -1,39 +1,16 @@
-import { GameHandler } from './handlers/game-handler';
-import { AddUserToGameRequest } from './modals/requests/add-user-to-game-request';
-import { HanldePlayerMoveRequest } from './modals/requests/handle-player-move-request';
-import { RemoveUserFromGameRequest } from './modals/requests/remove-user-from-game-request';
+import { WebSocketServer } from "ws";
+import { WebSocketHandler } from "./handlers/web-socket-handler";
 
-let gameHandler: GameHandler = new GameHandler();
+const wss = new WebSocketServer({ port: 8080 });
+const webSocketHanlder: WebSocketHandler = new WebSocketHandler();
 
-export const addUserToGame = async (event: any) => {
-    try {
-        const reqParams = new AddUserToGameRequest(JSON.parse(event.body));
-        console.log("Request Params: ", reqParams);
-        await gameHandler.addUserToGame(reqParams);
-    } catch (error) {
-        console.error("Error while adding user to a game: ", error);
-        throw error;
-    }
-};
+wss.on(`connection`, function connection(ws) {
 
-export const removeUserFromGame = async (event: any) => {
-    try {
-        const reqParams = new RemoveUserFromGameRequest(JSON.parse(event.body));
-        console.log("Request Params: ", reqParams);
-        await gameHandler.removeUserFromGame(reqParams);
-    } catch (error) {
-        console.error("Error while removing user from game: ", error);
-        throw error;
-    }
-};
+    // connection is estabilished, creation and all other workings of the game are handled here only
+    webSocketHanlder.createGame(ws);
 
-export const handlePlayerMove = async (event: any) => {
-    try {
-        const reqParams = new HanldePlayerMoveRequest(JSON.parse(event.body));
-        console.log("Request Params: ", reqParams);
-        await gameHandler.handlePlayerMove(reqParams)
-    } catch (error) {
-        console.error("Error while processing player move: ", error);
-        throw error;
-    }
-}
+    // connection is broken, thus end the game
+    ws.on(`disconnect`, function disconnection(ws) {
+        webSocketHanlder.endGame(ws);
+    })
+});

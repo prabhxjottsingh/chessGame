@@ -1,13 +1,12 @@
+import { WebSocket } from "ws";
 import { BadRequestError } from "../errors/bad-request-error";
 
 export class RemoveUserFromGameRequest {
     player: WebSocket;
-    gameId: number | null = null;
     constructor(reqObj: RemoveUserFromGameRequest) {
-        if (!reqObj || !reqObj.player || !reqObj.gameId) {
-            throw new BadRequestError('Invalid Game object');
+        if (!reqObj || !reqObj.player) {
+            throw new BadRequestError('Invalid removeUser Request');
         }
         this.player = reqObj.player;
-        this.gameId = reqObj.gameId;
     }
 }
