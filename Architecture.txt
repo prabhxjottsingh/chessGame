@@ -1,0 +1,20 @@
+Two Players
+    |___ Player one
+    |___ Player Two
+Need to send the move on one player to another player
+
+Thus client is not going to request to server for latest moves of other Players
+but the server is itself going to push the latest moves of one to another, thus we will be using WebSocket, not http server.
+
+Websockets => WebSockets are a computer protocol that allows for two-way communication between a user's browser and a server over a single Transmission Control Protocol (TCP) connection
+They are used in apps that require fast, real-time communication, such as chat, dashboard, and game apps.
+
+Create a persistent connection to backend server.
+Events that need to be pushed to client:
+ 1. Whenever a single player makes a move, send the event to server through WebSocket
+ 2. Now send this event to another player
+
+In the server we will maintain a single variable storing the waiting person, and we will then connect him/her to next
+latest coming one.
+(on small scale a single vairable is enough, as these are not gonna be multiple request at an instant)
+but when in large scale we can maintain something like queue and do our task without the breakage of the application
